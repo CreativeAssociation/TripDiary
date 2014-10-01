@@ -48,15 +48,6 @@ public class TransferController {
         intent.putExtra(NetworkService.S3_KEYS_EXTRA, keys);
         context.startService(intent);
     }
-    
-    public static void makePublic(Context context, String[] keys, Uri uri, String member) {
-        Intent intent = new Intent(context, NetworkService.class);
-        intent.setAction(Intent.ACTION_EDIT);
-        intent.setData(uri);
-        intent.putExtra(NetworkService.S3_KEYS_EXTRA, keys);
-        intent.putExtra("FB_ID", member);
-        context.startService(intent);
-    }
 
     public static void pause(Context context, TransferModel model) {
         Intent intent = makeIdIntent(context, model.getId());

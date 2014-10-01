@@ -13,7 +13,10 @@ import org.apache.commons.io.IOUtils;
 
 import com.creative.tripdiary.Constants;
 import com.creative.tripdiary.Util;
+import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.DeleteObjectsRequest;
+import com.amazonaws.services.s3.model.DeleteObjectsRequest.KeyVersion;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 
@@ -42,7 +45,6 @@ import android.widget.CheckBox;
 import android.widget.GridView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
-import android.widget.AdapterView.OnItemClickListener;
 
 
 public class FragmentAllPost extends Fragment{
@@ -50,8 +52,8 @@ public class FragmentAllPost extends Fragment{
     private AmazonS3Client mClient;
     private ObjectAdapter mAdapter;
     //keeps track of the objects the user has selected
-    private HashSet<S3ObjectSummary> mSelectedObjects = 
-        new HashSet<S3ObjectSummary>();
+    private List<S3ObjectSummary> mSelectedObjects = 
+        new ArrayList<S3ObjectSummary>();
 	private String member;
 	private boolean checkboxFlag;
 	protected ProgressDialog mLoadingProgressDialog;
@@ -75,7 +77,7 @@ public class FragmentAllPost extends Fragment{
 	public void onStart() {
 		// TODO Auto-generated method stub
 		super.onStart();
-		new RefreshTask().execute();
+		new AuthTask().execute();
 	}
 	
     private View initView(LayoutInflater inflater, ViewGroup container) {
@@ -88,23 +90,8 @@ public class FragmentAllPost extends Fragment{
         
         return view;
     }
-    /* 
-     * This lets the user click on anywhere in the row instead of just the checkbox
-     * to select the files to download
-     */
     
-    
-    private class ItemLongClickListener implements OnItemLongClickListener{
-        @Override
-        public boolean onItemLongClick(AdapterView<?> parent, View view,
-        		int pos, long id) {
-        	// TODO Auto-generated method stub
-        	Log.d("ItemLongClickListener", "333");
-            return true;
-        }
-    }
-    
-    //menu
+    //Change Action Bar
     private class MutipleChoiceModel implements MultiChoiceModeListener{
     	@Override
         public void onItemCheckedStateChanged(ActionMode mode, int position,
@@ -134,15 +121,11 @@ public class FragmentAllPost extends Fragment{
             // Respond to clicks on the actions in the CAB
             switch (item.getItemId()) {
             	case R.id.action_group:
-                //deleteSelectedItems();
-            		
-            		for (Integer s : mAdapter.getCurrentCheckedPosition()) {
-            		    Log.v("Position :",s.toString());
-            		}
-            		
 	                mode.finish(); // Action picked, so close the CAB
 	                return true;
             	case R.id.action_discard:
+            		new DeleteTask().execute();
+            		mode.finish();
             		return true;
                 default:
                     return false;
@@ -155,7 +138,7 @@ public class FragmentAllPost extends Fragment{
             MenuInflater inflater = mode.getMenuInflater();
             inflater.inflate(R.menu.image_actionbar, menu);
             checkboxFlag = !checkboxFlag;
-            
+            mAdapter.clearSelection();
             mode.setTitle("Select Items");
             mode.setSubtitle("One item selected");
             return true;
@@ -166,7 +149,6 @@ public class FragmentAllPost extends Fragment{
             // Here you can make any necessary updates to the activity when
             // the CAB is removed. By default, selected items are deselected/unchecked.
         	checkboxFlag = !checkboxFlag;
-        	mAdapter.clearSelection();
         }
 
         @Override
@@ -177,7 +159,7 @@ public class FragmentAllPost extends Fragment{
         }
     }
     
-    private class RefreshTask extends AsyncTask<Void, Void, List<Bitmap>> {
+    private class AuthTask extends AsyncTask<Void, Void, Boolean> {
         @Override
         protected void onPreExecute() {
         	// TODO Auto-generated method stub
@@ -186,9 +168,36 @@ public class FragmentAllPost extends Fragment{
         }
         
     	@Override
-        protected List<Bitmap> doInBackground(Void... params) {
-        	mClient = Util.getS3Client(getActivity());
-        	
+        protected Boolean doInBackground(Void... params) {
+        	Boolean flag = false;
+    		try{
+        		mClient = Util.getS3Client(getActivity());
+        		flag = true;
+        	}catch(AmazonClientException ace){
+        		Log.v("Amazon Error", ace.getMessage());
+        	}	
+            return flag;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean flag) {
+            //now that we have all the keys, add them all to the adapter
+        	if(flag == true){
+        		new RefreshTask().execute();
+        	}else{
+        		Log.v("Application Error", "Amazon Authetication Error");
+        	}       	
+        }
+    }
+    
+    private class RefreshTask extends AsyncTask<Void, Void, List<Bitmap>> {
+        @Override
+        protected void onPreExecute() {
+        	// TODO Auto-generated method stub
+        }
+        
+    	@Override
+        protected List<Bitmap> doInBackground(Void... params) {   	
         	List<S3ObjectSummary> objectSummaries = mClient.listObjects(Constants.BUCKET_NAME, member).getObjectSummaries();
         	List<Bitmap> imageList = new ArrayList<Bitmap> ();
         	String key = null;
@@ -224,13 +233,56 @@ public class FragmentAllPost extends Fragment{
             //now that we have all the keys, add them all to the adapter
             mAdapter.clear();
             mAdapter.addAll(objects);
+            mAdapter.notifyDataSetChanged();
+            
             if (mLoadingProgressDialog.isShowing()) {
             	mLoadingProgressDialog.dismiss();
     		}
         }
     }
+    
+    private class DeleteTask extends AsyncTask<Void, Void, Boolean> {
+        @Override
+        protected void onPreExecute() {
+        	// TODO Auto-generated method stub
+        	mLoadingProgressDialog.setMessage("Loading...");
+        	mLoadingProgressDialog.show();
+        }
+        
+    	@Override
+        protected Boolean doInBackground(Void... params) {
+			return deleteObjects(mSelectedObjects);       	
+        }
 
-
+        @Override
+        protected void onPostExecute(Boolean flag) {
+            //now that we have all the keys, add them all to the adapter         
+            if (mLoadingProgressDialog.isShowing()) {
+            	mLoadingProgressDialog.dismiss();
+    		}
+        }
+    }
+    
+    private Boolean deleteObjects(List<S3ObjectSummary> S3Objects){
+    	Boolean flag = false;
+    	DeleteObjectsRequest multiObjectDeleteRequest = new DeleteObjectsRequest(
+    			Constants.BUCKET_NAME);
+    	List<KeyVersion> keys = new ArrayList<KeyVersion>();
+    	try{
+	    	for (Integer s : mAdapter.getCurrentCheckedPosition()) {
+	    		keys.add(new KeyVersion(S3Objects.get(s).getKey()));
+	    		mAdapter.removeSelection(s);
+			}
+	    	multiObjectDeleteRequest.setKeys(keys);
+    		mClient.deleteObjects(multiObjectDeleteRequest);
+    		flag = true;
+    	}catch(AmazonClientException ace){
+    		Log.v("Amazon Error", ace.getMessage());
+    	}
+    	
+    	return flag;
+    }
+    
     /* Adapter for all the S3 objects */
     private class ObjectAdapter extends ArrayAdapter<Bitmap> {
     	private Context context;
@@ -319,6 +371,5 @@ public class FragmentAllPost extends Fragment{
             mSelection = new HashMap<Integer, Boolean>();
             notifyDataSetChanged();
         }
-
     }
 }
