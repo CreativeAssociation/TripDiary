@@ -7,3 +7,6 @@ target/
 
 # ignore all files ending with ~
 *~ 
+
+# ignore Configuration
+src/com/creative/tripdiary/Constants.java
