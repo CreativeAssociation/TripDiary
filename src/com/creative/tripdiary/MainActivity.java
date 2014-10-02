@@ -205,7 +205,6 @@ public class MainActivity extends Activity {
             Uri uri = data.getData();
             if(uri != null) {
                 TransferController.upload(this, uri, "public");
-                selectItem(0);
             }
         }
     }

@@ -54,6 +54,7 @@ public class FragmentAllPost extends Fragment{
     //keeps track of the objects the user has selected
     private List<S3ObjectSummary> mSelectedObjects = 
         new ArrayList<S3ObjectSummary>();
+    private List<Bitmap> imageList = new ArrayList<Bitmap> ();
 	private String member;
 	private boolean checkboxFlag;
 	protected ProgressDialog mLoadingProgressDialog;
@@ -70,15 +71,9 @@ public class FragmentAllPost extends Fragment{
     
 	@Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+		new AuthTask().execute();
 		return initView(inflater, container);
     }
-	
-	@Override
-	public void onStart() {
-		// TODO Auto-generated method stub
-		super.onStart();
-		new AuthTask().execute();
-	}
 	
     private View initView(LayoutInflater inflater, ViewGroup container) {
         View view = inflater.inflate(R.layout.fragment_photo_gallery, container, false);
@@ -199,7 +194,7 @@ public class FragmentAllPost extends Fragment{
     	@Override
         protected List<Bitmap> doInBackground(Void... params) {   	
         	List<S3ObjectSummary> objectSummaries = mClient.listObjects(Constants.BUCKET_NAME, member).getObjectSummaries();
-        	List<Bitmap> imageList = new ArrayList<Bitmap> ();
+        	
         	String key = null;
         	S3ObjectInputStream content = null;
         	byte[] bytes = null;
@@ -256,7 +251,8 @@ public class FragmentAllPost extends Fragment{
 
         @Override
         protected void onPostExecute(Boolean flag) {
-            //now that we have all the keys, add them all to the adapter         
+            //now that we have all the keys, add them all to the adapter
+        	mAdapter.notifyDataSetChanged();
             if (mLoadingProgressDialog.isShowing()) {
             	mLoadingProgressDialog.dismiss();
     		}
@@ -271,7 +267,7 @@ public class FragmentAllPost extends Fragment{
     	try{
 	    	for (Integer s : mAdapter.getCurrentCheckedPosition()) {
 	    		keys.add(new KeyVersion(S3Objects.get(s).getKey()));
-	    		mAdapter.removeSelection(s);
+	    		mAdapter.remove(imageList.get(s));
 			}
 	    	multiObjectDeleteRequest.setKeys(keys);
     		mClient.deleteObjects(multiObjectDeleteRequest);
