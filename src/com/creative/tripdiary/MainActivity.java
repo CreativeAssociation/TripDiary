@@ -28,6 +28,7 @@ public class MainActivity extends Activity {
     private DrawerLayout layDrawer;
     private ListView lstDrawer;
     private Integer fragmentId;
+    private Integer itemPosition;
     private ActionBarDrawerToggle drawerToggle;
     private CharSequence mDrawerTitle;
     private CharSequence mTitle;
@@ -37,6 +38,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        itemPosition = 0;
         initActionBar();
         initDrawer();
         initDrawerList();
@@ -114,7 +116,7 @@ public class MainActivity extends Activity {
         
     	switch (item.getItemId()) {     
 	        case R.id.action_refresh:
-	        	selectItem(0);
+	        	selectItem(itemPosition);
 	            return true;
 	        case R.id.action_upload:
 	        	Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
@@ -172,7 +174,7 @@ public class MainActivity extends Activity {
         }
         
     	fragmentId = fragment.getId();
-          
+    	itemPosition = position;  
 
   		// 更新被選擇項目，換標題文字，關閉選單
         lstDrawer.setItemChecked(position, true);

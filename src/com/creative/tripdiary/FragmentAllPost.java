@@ -195,7 +195,6 @@ public class FragmentAllPost extends Fragment{
         	byte[] bytes = null;
         	Bitmap bitmap = null;
         	
-        	
         	//get all the objects in bucket
         	for (S3ObjectSummary summary : objectSummaries) {
         	    key = summary.getKey();
@@ -212,9 +211,8 @@ public class FragmentAllPost extends Fragment{
                 bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
                 mSelectedObjects.add(summary);
                 
-        	    imageList.add(Bitmap.createScaledBitmap(bitmap, 120, 120, true));     	    
+        	    imageList.add(Bitmap.createScaledBitmap(bitmap, 270, 480, true));     	    
         	}
-        	
             return imageList;
         }
 

@@ -116,6 +116,7 @@ public class FragmentMyPost extends Fragment{
             // Respond to clicks on the actions in the CAB
             switch (item.getItemId()) {
             	case R.id.action_group:
+            		new ShareTask().execute();
 	                mode.finish(); // Action picked, so close the CAB
 	                return true;
             	case R.id.action_discard:
@@ -261,6 +262,29 @@ public class FragmentMyPost extends Fragment{
         }
     }
     
+    private class ShareTask extends AsyncTask<Void, Void, Boolean> {
+        @Override
+        protected void onPreExecute() {
+        	// TODO Auto-generated method stub
+        	mLoadingProgressDialog.setMessage("Loading...");
+        	mLoadingProgressDialog.show();
+        }
+        
+    	@Override
+        protected Boolean doInBackground(Void... params) {
+			return shareObjects(mSelectedObjects);       	
+        }
+
+        @Override
+        protected void onPostExecute(Boolean flag) {
+            //now that we have all the keys, add them all to the adapter
+        	mAdapter.notifyDataSetChanged();
+            if (mLoadingProgressDialog.isShowing()) {
+            	mLoadingProgressDialog.dismiss();
+    		}
+        }
+    }
+    
     private Boolean deleteObjects(List<S3ObjectSummary> S3Objects){
     	Boolean flag = false;
     	DeleteObjectsRequest multiObjectDeleteRequest = new DeleteObjectsRequest(
@@ -273,6 +297,21 @@ public class FragmentMyPost extends Fragment{
 			}
 	    	multiObjectDeleteRequest.setKeys(keys);
     		mClient.deleteObjects(multiObjectDeleteRequest);
+    		flag = true;
+    	}catch(AmazonClientException ace){
+    		Log.v("Amazon Error", ace.getMessage());
+    	}
+    	
+    	return flag;
+    }
+    
+    private Boolean shareObjects(List<S3ObjectSummary> S3Objects){
+    	Boolean flag = false;
+    	try{
+	    	for (Integer s : mAdapter.getCurrentCheckedPosition()) {
+	    		mClient.copyObject(Constants.BUCKET_NAME, S3Objects.get(s).getKey(), 
+	    						   Constants.BUCKET_NAME, "public/"+S3Objects.get(s).getKey().lastIndexOf("/"));
+			}
     		flag = true;
     	}catch(AmazonClientException ace){
     		Log.v("Amazon Error", ace.getMessage());

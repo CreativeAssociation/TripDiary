@@ -17,6 +17,7 @@ import android.view.WindowManager;
 public class HomeActivity extends Activity{
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
+		
 		//Remove title bar
 		this.requestWindowFeature(Window.FEATURE_NO_TITLE);
 	     
