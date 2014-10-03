@@ -5,10 +5,10 @@
         android:orderInCategory="1"
         android:icon="@drawable/ic_launcher"
         android:title="@string/refresh"/>
-    <item
+	<item
         android:id="@+id/action_upload"
         android:orderInCategory="1"
         android:icon="@drawable/ic_launcher"
         android:title="@string/upload"/>
-
+	
 </menu>

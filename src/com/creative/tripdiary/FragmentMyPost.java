@@ -44,7 +44,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 
 
-public class FragmentAllPost extends Fragment{
+public class FragmentMyPost extends Fragment{
 	private static GridView mGrid;
     private AmazonS3Client mClient;
     private ObjectAdapter mAdapter;
@@ -60,7 +60,7 @@ public class FragmentAllPost extends Fragment{
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        member = "public";
+        member = getActivity().getIntent().getStringExtra("FB_ID");;
         checkboxFlag = false;
         mAdapter = new ObjectAdapter(getActivity());
         mLoadingProgressDialog = new ProgressDialog(getActivity());
@@ -68,7 +68,10 @@ public class FragmentAllPost extends Fragment{
     
 	@Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-		new AuthTask().execute();
+		if(member != "None"){
+			new AuthTask().execute();
+		}
+		
 		return initView(inflater, container);
     }
 	
@@ -112,9 +115,13 @@ public class FragmentAllPost extends Fragment{
         public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
             // Respond to clicks on the actions in the CAB
             switch (item.getItemId()) {
-            	case R.id.action_favorite:
+            	case R.id.action_group:
 	                mode.finish(); // Action picked, so close the CAB
 	                return true;
+            	case R.id.action_discard:
+            		new DeleteTask().execute();
+            		mode.finish();
+            		return true;
                 default:
                     return false;
             }
@@ -124,7 +131,7 @@ public class FragmentAllPost extends Fragment{
         public boolean onCreateActionMode(ActionMode mode, Menu menu) {
             // Inflate the menu for the CAB
             MenuInflater inflater = mode.getMenuInflater();
-            inflater.inflate(R.menu.image_all_actionbar, menu);
+            inflater.inflate(R.menu.image_my_actionbar, menu);
             checkboxFlag = !checkboxFlag;
             mAdapter.clearSelection();
             mode.setTitle("Select Items");
@@ -229,6 +236,49 @@ public class FragmentAllPost extends Fragment{
             	mLoadingProgressDialog.dismiss();
     		}
         }
+    }
+    
+    private class DeleteTask extends AsyncTask<Void, Void, Boolean> {
+        @Override
+        protected void onPreExecute() {
+        	// TODO Auto-generated method stub
+        	mLoadingProgressDialog.setMessage("Loading...");
+        	mLoadingProgressDialog.show();
+        }
+        
+    	@Override
+        protected Boolean doInBackground(Void... params) {
+			return deleteObjects(mSelectedObjects);       	
+        }
+
+        @Override
+        protected void onPostExecute(Boolean flag) {
+            //now that we have all the keys, add them all to the adapter
+        	mAdapter.notifyDataSetChanged();
+            if (mLoadingProgressDialog.isShowing()) {
+            	mLoadingProgressDialog.dismiss();
+    		}
+        }
+    }
+    
+    private Boolean deleteObjects(List<S3ObjectSummary> S3Objects){
+    	Boolean flag = false;
+    	DeleteObjectsRequest multiObjectDeleteRequest = new DeleteObjectsRequest(
+    			Constants.BUCKET_NAME);
+    	List<KeyVersion> keys = new ArrayList<KeyVersion>();
+    	try{
+	    	for (Integer s : mAdapter.getCurrentCheckedPosition()) {
+	    		keys.add(new KeyVersion(S3Objects.get(s).getKey()));
+	    		mAdapter.remove(imageList.get(s));
+			}
+	    	multiObjectDeleteRequest.setKeys(keys);
+    		mClient.deleteObjects(multiObjectDeleteRequest);
+    		flag = true;
+    	}catch(AmazonClientException ace){
+    		Log.v("Amazon Error", ace.getMessage());
+    	}
+    	
+    	return flag;
     }
     
     /* Adapter for all the S3 objects */

@@ -10,30 +10,38 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.Window;
+import android.view.WindowManager;
 
 
 public class HomeActivity extends Activity{
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
-	  super.onCreate(savedInstanceState);
+		//Remove title bar
+		this.requestWindowFeature(Window.FEATURE_NO_TITLE);
+	     
+		//Remove notification bar
+		this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+		super.onCreate(savedInstanceState);
+		  
+		setContentView(R.layout.activity_home);
+		  
+		findViewById(R.id.btnSignIn).setOnClickListener(new OnClickListener() {
+			@Override
+	        public void onClick(View v) {
+				authLogin();
+	        }
+	    });
 	  
-	  setContentView(R.layout.activity_home);
-	  
-	  findViewById(R.id.btnSignIn).setOnClickListener(new OnClickListener() {
-          @Override
-          public void onClick(View v) {
-        	  authLogin();
-          }
-      });
-	  
-	  findViewById(R.id.btnSkip).setOnClickListener(new OnClickListener() {
-          @Override
-          public void onClick(View v) {
+		findViewById(R.id.btnSkip).setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
         	  	Intent i = new Intent(HomeActivity.this, MainActivity.class);
+        	  	i.putExtra("FB_ID", "None");
    	       		startActivity(i);
-          }
-      });
-	 }
+			}
+		});
+	}
 	
 	@Override
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {

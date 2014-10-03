@@ -48,7 +48,7 @@ public class MainActivity extends Activity {
         getMenuInflater().inflate(R.menu.main, menu);
         return true;
     }
-    
+
     private void initActionBar(){
         getActionBar().setDisplayHomeAsUpEnabled(true);
         getActionBar().setHomeButtonEnabled(true);
@@ -156,10 +156,11 @@ public class MainActivity extends Activity {
 		  			fragment = new FragmentAllPost();
 		  			break;	  			
 		  		case 1:
-		  			fragment = new FragmentAllPostSummary();
+		  			fragment = new FragmentMyPost();
 		  			break;
 		  			
 		  		case 2:
+		  			fragment = new FragmentAllPostSummary();
 		  			break;
 		
 		  		default:
@@ -208,7 +209,7 @@ public class MainActivity extends Activity {
         if(resCode == Activity.RESULT_OK && data != null) {
             Uri uri = data.getData();
             if(uri != null) {
-                TransferController.upload(this, uri, "public");
+                TransferController.upload(this, uri, getIntent().getStringExtra("FB_ID"));
             }
         }
     }
