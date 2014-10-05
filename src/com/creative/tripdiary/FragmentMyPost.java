@@ -60,7 +60,7 @@ public class FragmentMyPost extends Fragment{
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        member = getActivity().getIntent().getStringExtra("FB_ID");;
+        member = (member==null)?"None":getActivity().getIntent().getStringExtra("FB_ID");
         checkboxFlag = false;
         mAdapter = new ObjectAdapter(getActivity());
         mLoadingProgressDialog = new ProgressDialog(getActivity());
@@ -220,7 +220,7 @@ public class FragmentMyPost extends Fragment{
                 bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
                 mSelectedObjects.add(summary);
                 
-        	    imageList.add(Bitmap.createScaledBitmap(bitmap, 120, 120, true));     	    
+        	    imageList.add(Bitmap.createScaledBitmap(bitmap, 270, 480, true));     	    
         	}
         	
             return imageList;

@@ -2,8 +2,10 @@ package com.creative.tripdiary;
 
 
 import java.io.IOException;
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -14,8 +16,6 @@ import com.creative.tripdiary.Constants;
 import com.creative.tripdiary.Util;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.DeleteObjectsRequest;
-import com.amazonaws.services.s3.model.DeleteObjectsRequest.KeyVersion;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 
@@ -222,7 +222,6 @@ public class FragmentAllPost extends Fragment{
             mAdapter.clear();
             mAdapter.addAll(objects);
             mAdapter.notifyDataSetChanged();
-            
             if (mLoadingProgressDialog.isShowing()) {
             	mLoadingProgressDialog.dismiss();
     		}
